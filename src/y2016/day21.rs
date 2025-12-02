@@ -64,8 +64,10 @@ impl Ins {
             Ins::RotatePos(c) => {
                 let index = string.iter().enumerate().find(|(_, ch)| **ch == c).unwrap().0;
                 let length = string.len();
-                string.rotate_left((index + 1 + if index >= 4 { 1 } else { 0 }) % length);
-                todo!()
+                let i = (0..length)
+                    .find(move |&i| (i + i + 1 + if i >= 4 { 1 } else { 0 }) % length == index)
+                    .unwrap();
+                string.rotate_left((i + 1 + if i >= 4 { 1 } else { 0 }) % length);
             },
             Ins::Reverse(a, b) => string[a..=b].reverse(),
             Ins::Move(a, b) => {
@@ -76,45 +78,17 @@ impl Ins {
     }
 }
 
-static INS: &'static str = r"
-swap position 4 with position 0
-swap letter d with letter b
-reverse positions 0 through 4
-rotate left 1 step
-move position 1 to position 4
-move position 3 to position 0
-rotate based on position of letter b
-rotate based on position of letter d
-";
-
 pub fn part1(input: Input) -> impl Display {
-    let input = parse(INS.trim());
-
-    let i2 = input.clone();
-
-    // let mut string = b"abcdefgh".into_iter().copied().collect_vec();
-    let mut string = b"abcde".into_iter().copied().collect_vec();
+    let mut string = b"abcdefgh".into_iter().copied().collect_vec();
     for ins in input {
         ins.perform(&mut string);
     }
-
-    let mut res = string.clone();
-
-    let r = string.into_iter().map(|c| c as char).join("");
-
-    for ins in i2 {
-        ins.reverse(&mut res);
-        println!("R {:?}", res.iter().copied().map(|c| c as char).join(""));
-    }
-
-    println!("F {:?}", res.into_iter().map(|c| c as char).join(""));
-
-    r
+    string.into_iter().map(|c| c as char).join("")
 }
 
 pub fn part2(input: Input) -> impl Display {
     let mut string = b"fbgdceah".into_iter().copied().collect_vec();
-    for ins in input {
+    for ins in input.into_iter().rev() {
         ins.reverse(&mut string);
     }
     string.into_iter().map(|c| c as char).join("")
