@@ -36,7 +36,7 @@ pub fn part1(input: Input) -> impl Display {
     "".to_string()
 }
 
-pub fn part2(input: Input) -> impl Display {
+pub fn part2(_input: Input) -> impl Display {
     0
     // let mut longest = 0;
     // for (dist, (_, pos)) in bfs(("".to_owned(), (0, 0)), move |(path, pos)| {

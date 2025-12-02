@@ -29,7 +29,7 @@ impl Target {
     fn give(&self, value: usize, bots: &[Bot]) -> Option<usize> {
         match self {
             Target::Bot(i) => bots[*i].give(value, bots),
-            Target::Output(o) => {
+            Target::Output(_o) => {
                 // println!("output {} {}", o, value);
                 None
             },
@@ -92,6 +92,6 @@ pub fn part1(input: Input) -> impl Display {
     -1
 }
 
-pub fn part2(input: Input) -> impl Display {
+pub fn part2(_input: Input) -> impl Display {
     0
 }
