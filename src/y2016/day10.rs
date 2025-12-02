@@ -1,6 +1,7 @@
+use std::cell::Cell;
 use advent::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Target {
     Bot(usize),
     Output(usize),
@@ -24,17 +25,71 @@ parse!(Vec<Ins>, lines({
     "bot " b:usize " gives low to " l:target_parser() " and high to " h:target_parser() => Ins::Split(b, l, h),
 }));
 
+impl Target {
+    fn give(&self, value: usize, bots: &[Bot]) -> Option<usize> {
+        match self {
+            Target::Bot(i) => bots[*i].give(value, bots),
+            Target::Output(o) => {
+                // println!("output {} {}", o, value);
+                None
+            },
+        }
+    }
+}
+
+#[derive(Debug)]
+struct Bot {
+    index: usize,
+    value: Cell<Option<usize>>,
+    lo: Target,
+    hi: Target,
+}
+
+impl Bot {
+    fn give(&self, value: usize, bots: &[Bot]) -> Option<usize> {
+        if let Some(v) = self.value.get() {
+            self.value.set(None);
+            let mi = v.min(value);
+            let ma = v.max(value);
+            self.lo.give(mi, bots);
+            self.hi.give(ma, bots);
+            (mi == 17 && ma == 61).then_some(self.index)
+        } else {
+            self.value.set(Some(value));
+            None
+        }
+    }
+}
+
 pub fn part1(input: Input) -> impl Display {
     let count = input.iter()
         .map(|ins| match ins {
             Ins::Val(_, b) => *b,
-            Ins::Split(s, Target::Bot(b), Target::Bot(b2)) => (*b).max(*b2).max(*s),
-            Ins::Split(s, Target::Bot(b), _) => (*b).max(*s),
-            Ins::Split(s, _, Target::Bot(b)) => (*b).max(*s),
             Ins::Split(s, _, _) => *s,
         })
         .max().expect("no input") + 1;
-    count
+    let mut bots = (0..count)
+        .map(|index| Bot {
+            index,
+            value: Cell::new(None),
+            lo: Target::Bot(usize::MAX),
+            hi: Target::Bot(usize::MAX) ,
+        })
+        .collect_vec();
+    for ins in &input {
+        if let Ins::Split(b, l, h) = ins {
+            bots[*b].lo = *l;
+            bots[*b].hi = *h;
+        }
+    }
+    for ins in &input {
+        if let Ins::Val(v, b) = ins {
+            if let Some(res) = bots[*b].give(*v, &bots) {
+                return res as isize;
+            }
+        }
+    }
+    -1
 }
 
 pub fn part2(input: Input) -> impl Display {
