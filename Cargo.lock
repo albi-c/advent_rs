@@ -9,6 +9,7 @@ dependencies = [
  "aoc-parse",
  "itertools",
  "macros",
+ "num-traits",
  "paste",
  "rayon",
 ]
