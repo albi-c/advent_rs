@@ -22,19 +22,15 @@ pub fn part2(input: Input) -> impl Display {
     let mut result = 0;
     while removed {
         removed = false;
-        for y in 0..grid.height() {
-            for x in 0..grid.width() {
-                if grid[(x, y)] != b'@' {
-                    continue;
-                }
-                if !accessible(&grid, (x, y)) {
-                    continue;
-                }
+        grid.with_enumerate_modify(|pos, val, grid| {
+            if val == b'@' && accessible(grid, pos) {
                 removed = true;
                 result += 1;
-                grid[(x, y)] = b'.';
+                b'.'
+            } else {
+                val
             }
-        }
+        }, 0);
     }
     result
 }
