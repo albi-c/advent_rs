@@ -11,17 +11,6 @@ pub fn part1(input: Input) -> impl Display {
         .expect("no input")
 }
 
-fn flood_fill(grid: &mut Grid2<bool>, pos: (usize, usize)) {
-    let mut queue = vec![pos];
-    while let Some(pos) = queue.pop() {
-        if *grid.at(pos) {
-            continue;
-        }
-        *grid.at_mut(pos) = true;
-        queue.extend(grid.neighbor_positions(pos, false));
-    }
-}
-
 pub fn part2(input: Input) -> impl Display {
     let (x_coords, y_coords) = input.iter().map(|&p| (p[0], p[1])).unzip_to_vec();
     let x_coords = OrderedCompression::from_vec(x_coords);
@@ -38,14 +27,17 @@ pub fn part2(input: Input) -> impl Display {
         let hi = a.simd_max(b);
         grid.slice_mut(lo, hi - lo + usizex2::splat(1)).fill(true);
     }
-    flood_fill(&mut grid, (size[0] / 2, size[1] / 2));
+    grid.flood_fill(size / usizex2::splat(2), &false, &true, false);
 
     compressed.iter()
         .cartesian_product(compressed.iter())
         .filter(|&(&a, &b)| {
             let lo = a.simd_min(b);
             let hi = a.simd_max(b);
-            grid.slice(lo, hi - lo + usizex2::splat(1)).iter().all(|&x| x)
+            let len = hi - lo + usizex2::splat(1);
+            Grid2Range::new(lo, len)
+                .edges()
+                .all(|p| grid.slice_range(&p).iter().all(|&x| x))
         })
         .map(|(&a, &b)| { (
             usizex2::from_array([
