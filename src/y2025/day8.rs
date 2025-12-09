@@ -11,9 +11,9 @@ struct Circuit {
     pub id: usize,
 }
 
-fn distance(a: USVec3, b: USVec3) -> usize {
+fn distance_squared(a: USVec3, b: USVec3) -> usize {
     let d = a - b;
-    (d * d).reduce_sum().isqrt()
+    (d * d).reduce_sum()
 }
 
 fn prepare_input(input: &Input) -> (Vec<Rc<RefCell<Circuit>>>, Vec<(usize, usize, usize)>, Grid2<bool>) {
@@ -23,7 +23,7 @@ fn prepare_input(input: &Input) -> (Vec<Rc<RefCell<Circuit>>>, Vec<(usize, usize
     let pairs = (0..input.len())
         .cartesian_product(0..input.len())
         .filter(|&(a, b)| a != b)
-        .map(|(a, b)| (a, b, distance(input[a], input[b])))
+        .map(|(a, b)| (a, b, distance_squared(input[a], input[b])))
         .sorted_unstable_by_key(|(_, _, d)| *d)
         .collect_vec();
     let direct = Grid2::new_value((input.len(), input.len()), false);
@@ -65,7 +65,7 @@ pub fn part1(input: Input) -> impl Display {
         }
     }
     let lengths = circuits.iter()
-        .unique_by(|c| c.as_ptr())
+        .unique_by(|c| c.borrow().id)
         .map(|c| c.borrow().boxes.len())
         .sorted_unstable()
         .rev()
@@ -76,14 +76,13 @@ pub fn part1(input: Input) -> impl Display {
 pub fn part2(input: Input) -> impl Display {
     let (mut circuits, pairs, mut direct) = prepare_input(&input);
     let mut diff_circuits = circuits.len();
-    let mut result = None;
     for (a, b, _) in pairs {
         if connect(a, b, &mut circuits, &mut direct).1 {
             diff_circuits -= 1;
             if diff_circuits == 1 {
-                result = Some(input[a][0] * input[b][0]);
+                return input[a][0] * input[b][0];
             }
         }
     }
-    result.expect("no solution")
+    panic!("no solution")
 }
