@@ -8,3 +8,4 @@ advent = { path = "../libadvent_rs" }
 md5 = "0.8.0"
 hex = "0.4.3"
 memoize = "0.5.1"
+z3 = "0.19.5"
