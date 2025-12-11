@@ -9,3 +9,4 @@ md5 = "0.8.0"
 hex = "0.4.3"
 memoize = "0.5.1"
 z3 = "0.19.5"
+indexset = { version = "0.12.3", default-features = false }
