@@ -1,4 +1,5 @@
 use advent::prelude::*;
+use memoize::memoize;
 
 parse!();
 
@@ -36,24 +37,22 @@ pub fn part1(input: Input) -> impl Display {
     "".to_string()
 }
 
-pub fn part2(_input: Input) -> impl Display {
-    0
-    // let mut longest = 0;
-    // for (dist, (_, pos)) in bfs(("".to_owned(), (0, 0)), move |(path, pos)| {
-    //     move_options(input, pos, &path)
-    //         .map(move |(ch, new_pos)| {
-    //             let mut new_path = path.clone();
-    //             new_path.push(ch as char);
-    //             (new_path, new_pos)
-    //         })
-    // }) {
-    //     if pos == (3, 3) {
-    //         let prev = longest;
-    //         longest = longest.max(dist);
-    //         if longest != prev {
-    //             println!("17:2 - longest {longest}");
-    //         }
-    //     }
-    // }
-    // unreachable!()
+#[memoize(Ignore: salt)]
+fn longest_path(salt: &str, pos: (usize, usize), path: String) -> usize {
+    if pos == (3, 3) {
+        path.len()
+    } else {
+        move_options(salt, pos, &path)
+            .map(|(ch, new_pos)| {
+                let mut new_path = path.clone();
+                new_path.push(ch as char);
+                longest_path(salt, new_pos, new_path)
+            })
+            .max()
+            .unwrap_or(0)
+    }
+}
+
+pub fn part2(input: Input) -> impl Display {
+    longest_path(input, (0, 0), "".to_owned())
 }
