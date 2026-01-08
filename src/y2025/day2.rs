@@ -22,11 +22,11 @@ pub fn part1(input: Input) -> impl Display {
 }
 
 fn is_invalid_2(n: usize) -> bool {
-    let digits = n.ilog10() + 1;
+    let mut buffer = itoa::Buffer::new();
+    let s = buffer.format(n).as_bytes();
+    let digits = s.len();
     for d in 1..=digits/2 {
         if digits % d == 0 && digits / d >= 2 {
-            let mut buffer = itoa::Buffer::new();
-            let s = buffer.format(n).as_bytes();
             if s.chunks(d as usize).all_equal() {
                 return true;
             }
