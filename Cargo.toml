@@ -10,3 +10,4 @@ hex = "0.4.3"
 memoize = "0.5.1"
 z3 = "0.19.5"
 indexset = { version = "0.12.3", default-features = false }
+itoa = "1.0.17"
