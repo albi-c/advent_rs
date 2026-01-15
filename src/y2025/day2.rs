@@ -21,58 +21,24 @@ pub fn part1(input: Input) -> impl Display {
         .sum::<usize>()
 }
 
-#[repr(align(64))]
-struct CacheAligned<T>(pub T);
-
-const CHUNK_INFO: CacheAligned<[[u8; 4]; 16]> = const {
-    let mut result = [[0; _]; _];
-    let mut i = 0;
-    while i < result.len() {
-        let mut res = [0; _];
-        let mut j = 0;
-        let mut k = 1;
-        while j < res.len() && k <= i {
-            if i % k == 0 {
-                let count = i / k;
-                if count > 1 {
-                    let size = i / count;
-                    if size != 1 {
-                        res[j] = (((count - 1) as u8) << 4) | size as u8;
-                        j += 1;
-                    }
-                }
-            }
-            k += 1;
-        }
-        result[i] = res;
-        i += 1;
-    }
-    CacheAligned(result)
-};
-
 fn is_invalid_str_2(s: &[u8]) -> bool {
     if s.iter().all_equal() {
         return true;
     }
     let digits = s.len();
-    // SAFETY: there are never more than 15 digits in the input - limited by buffer size
-    let mut ci = u32::from_le_bytes(unsafe { *CHUNK_INFO.0.get_unchecked(digits) });
-    'outer: while ci != 0 {
-        let chunks_m1 = ((ci & 0xf0) >> 4) as usize;
-        let size = (ci & 0xf) as usize;
-        ci >>= 8;
-
-        let first = &s[..size];
-        let mut offset = size;
-        for _ in 0..chunks_m1 {
-            if first != &s[offset..offset + size] {
-                continue 'outer;
-            }
-            offset += size;
-        }
-        return true;
+    match digits {
+        2 | 3 | 5 | 7 | 11 | 13 => false,
+        4 => s[..2] == s[2..],
+        6 => s[..3] == s[3..] || s.as_chunks::<2>().0.iter().all_equal(),
+        8 => s[..4] == s[4..],
+        9 => s.as_chunks::<3>().0.iter().all_equal(),
+        10 => s[..5] == s[5..] || s.as_chunks::<2>().0.iter().all_equal(),
+        12 => s[..6] == s[6..] || s.as_chunks::<4>().0.iter().all_equal(),
+        14 => s[..7] == s[7..] || s.as_chunks::<2>().0.iter().all_equal(),
+        15 => s.as_chunks::<5>().0.iter().all_equal() || s.as_chunks::<3>().0.iter().all_equal(),
+        16 => s[..8] == s[8..],
+        _ => unreachable!(),
     }
-    false
 }
 
 fn increment_integer(len: &mut usize, buf: &mut [u8; 16]) {
@@ -92,18 +58,18 @@ fn increment_integer(len: &mut usize, buf: &mut [u8; 16]) {
 
 fn with_strings_in_interval(a: usize, b: usize, mut func: impl FnMut(usize, &[u8])) {
     let a = a.max(10);
-    let mut data = {
+    let (mut buf, mut len) = {
         let mut buffer = itoa::Buffer::new();
         let s = buffer.format(a).as_bytes();
         let mut buf = [b'0'; 16];
         for i in 0..s.len() {
             buf[i] = s[s.len() - i - 1];
         }
-        CacheAligned((buf, s.len()))
+        (buf, s.len())
     };
     for i in a..=b {
-        func(i, &data.0.0[..data.0.1]);
-        increment_integer(&mut data.0.1, &mut data.0.0);
+        func(i, &buf[..len]);
+        increment_integer(&mut len, &mut buf);
     }
 }
 
