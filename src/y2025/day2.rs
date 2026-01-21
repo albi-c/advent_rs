@@ -2,13 +2,10 @@ use advent::prelude::*;
 
 parse!(Vec<(usize, usize)>, repeat_sep(usize '-' usize, ','));
 
-fn is_invalid(n: usize) -> bool {
-    let digits = n.ilog10() + 1;
-    if digits % 2 == 0 {
-        let mut buffer = itoa::Buffer::new();
-        let s = buffer.format(n).as_bytes();
-        let (a, b) = s.split_at(digits as usize / 2);
-        a == b
+fn is_invalid_str(n: usize, s: u64) -> bool {
+    if n % 2 == 0 {
+        let h = n / 2;
+        s >> (4 * h) == s & mask(4 * h)
     } else {
         false
     }
@@ -17,7 +14,7 @@ fn is_invalid(n: usize) -> bool {
 pub fn part1(input: Input) -> impl Display {
     input
         .into_iter()
-        .map(|(a, b)| (a..=b).filter(|&n| is_invalid(n)).sum::<usize>())
+        .map(|(a, b)| invalid_in_interval(a, b, is_invalid_str))
         .sum::<usize>()
 }
 
@@ -100,10 +97,10 @@ fn with_strings_in_interval(a: usize, b: usize, mut func: impl FnMut(usize, usiz
     }
 }
 
-fn invalid_in_interval(a: usize, b: usize) -> usize {
+fn invalid_in_interval(a: usize, b: usize, check: impl Fn(usize, u64) -> bool) -> usize {
     let mut result = 0;
     with_strings_in_interval(a, b, |i, n, s| {
-        if is_invalid_str_2(n, s) {
+        if check(n, s) {
             result += i;
         }
     });
@@ -113,6 +110,6 @@ fn invalid_in_interval(a: usize, b: usize) -> usize {
 pub fn part2(input: Input) -> impl Display {
     input
         .into_iter()
-        .map(|(a, b)| invalid_in_interval(a, b))
+        .map(|(a, b)| invalid_in_interval(a, b, is_invalid_str_2))
         .sum::<usize>()
 }
