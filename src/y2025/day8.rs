@@ -41,12 +41,12 @@ fn connect(a: usize, b: usize, circuits: &mut Vec<Rc<RefCell<Circuit>>>, direct:
         return (true, false);
     }
 
-    let ptr = &raw mut *circuits;
     let [ac, bc] = circuits.get_disjoint_mut([a, b]).expect("invalid pair");
     let bc = std::mem::replace(bc, ac.clone());
+    let ac = circuits[a].clone();
     for &i in bc.borrow().boxes.iter() {
         if i != a && i != b {
-            *unsafe { (&mut *ptr).as_mut_ptr().add(i).as_mut().unwrap() } = ac.clone();
+            circuits[i] = ac.clone();
         }
     }
     ac.borrow_mut().boxes.extend(bc.borrow_mut().boxes.drain(..));
