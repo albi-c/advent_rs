@@ -1,3 +1,4 @@
+use std::hint::unlikely;
 use advent::prelude::*;
 
 parse!(Vec<(usize, usize)>, repeat_sep(usize '-' usize, ','));
@@ -60,13 +61,13 @@ fn is_invalid_str_2(n: usize, s: u64) -> bool {
 
 fn increment_integer(mut n: usize, mut s: u64) -> (usize, u64) {
     s += 1;
-    if s & 0xf > 9 {
+    if unlikely(s & 0xf > 9) {
         s &= !0xf;
         let mut i = 1;
         loop {
             let mask = 0xf << (4 * i);
             s += 1 << (4 * i);
-            if (s & mask) >> (4 * i) > 9 {
+            if unlikely((s & mask) >> (4 * i) > 9) {
                 s &= !mask;
                 n = n.max(i + 2);
             } else {
