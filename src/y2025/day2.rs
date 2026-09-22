@@ -25,10 +25,12 @@ const fn mask(b: usize) -> u64 {
 }
 
 #[inline(always)]
-fn check_many_chunks<const S: usize, const N: usize>(s: u64) -> bool {
-    let first = s & mask(S);
-    for i in 1..N {
-        if (s >> (S * i)) & mask(S) != first {
+fn check_many_chunks<const S: usize, const N: usize>(mut s: u64) -> bool {
+    let mask = mask(S);
+    let first = s & mask;
+    for _ in 1..N {
+        s >>= S;
+        if s & mask != first {
             return false;
         }
     }
@@ -57,9 +59,11 @@ fn is_invalid_str_2(n: usize, s: u64) -> bool {
         return true;
     }
 
-    let first = s & mask(4);
-    for i in 1..n as u32 {
-        if unsafe { s.unchecked_shr(i << 2) } & mask(4) != first {
+    let mut s = s;
+    let first = s & const { mask(4) };
+    for _ in 1..n {
+        s >>= 4;
+        if s & const { mask(4) } != first {
             return false;
         }
     }
@@ -70,11 +74,7 @@ fn is_invalid_str_2(n: usize, s: u64) -> bool {
 const fn mask_4b<const N: u64>() -> u64 {
     const {
         assert!(N < 0xf);
-        let x = N | (N << 4);
-        let x = x | (x << 8);
-        let x = x | (x << 16);
-        let x = x | (x << 32);
-        x
+        N * 0x1111_1111_1111_1111
     }
 }
 
@@ -83,7 +83,7 @@ fn spread_or_4b(x: u64) -> u64 {
     let x = x | (x >> 1);
     let x = x | (x >> 2);
     let x = x & mask_4b::<1>();
-    unsafe { (x << 4).unchecked_sub(x) }
+    unsafe { x.unchecked_mul(0xf) }
 }
 
 #[inline(always)]
