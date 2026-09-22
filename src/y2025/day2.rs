@@ -1,4 +1,4 @@
-use std::hint::unlikely;
+use std::hint::{assert_unchecked, likely};
 use advent::prelude::*;
 
 parse!(Vec<(usize, usize)>, repeat_sep(usize '-' usize, ','));
@@ -19,10 +19,12 @@ pub fn part1(input: Input) -> impl Display {
         .sum::<usize>()
 }
 
+#[inline(always)]
 const fn mask(b: usize) -> u64 {
     (1 << b) - 1
 }
 
+#[inline(always)]
 fn check_many_chunks<const S: usize, const N: usize>(s: u64) -> bool {
     let first = s & mask(S);
     for i in 1..N {
@@ -33,7 +35,12 @@ fn check_many_chunks<const S: usize, const N: usize>(s: u64) -> bool {
     true
 }
 
+#[inline(always)]
 fn is_invalid_str_2(n: usize, s: u64) -> bool {
+    unsafe {
+        assert_unchecked(n >= 2);
+        assert_unchecked(n <= 16);
+    }
     if match n {
         2 | 3 | 5 | 7 | 11 | 13 => false,
         4 => s & mask(8) == s >> 8,
@@ -51,34 +58,57 @@ fn is_invalid_str_2(n: usize, s: u64) -> bool {
     }
 
     let first = s & mask(4);
-    for i in 1..n {
-        if (s >> (4 * i)) & mask(4) != first {
+    for i in 1..n as u32 {
+        if unsafe { s.unchecked_shr(i << 2) } & mask(4) != first {
             return false;
         }
     }
     true
 }
 
-fn increment_integer(mut n: usize, mut s: u64) -> (usize, u64) {
-    s += 1;
-    if unlikely(s & 0xf > 9) {
-        s &= !0xf;
-        let mut i = 1;
-        loop {
-            let mask = 0xf << (4 * i);
-            s += 1 << (4 * i);
-            if unlikely((s & mask) >> (4 * i) > 9) {
-                s &= !mask;
-                n = n.max(i + 2);
-            } else {
-                break;
-            }
-            i += 1;
-        }
+#[inline(always)]
+const fn mask_4b<const N: u64>() -> u64 {
+    const {
+        assert!(N < 0xf);
+        let x = N | (N << 4);
+        let x = x | (x << 8);
+        let x = x | (x << 16);
+        let x = x | (x << 32);
+        x
     }
+}
+
+#[inline(always)]
+fn spread_or_4b(x: u64) -> u64 {
+    let x = x | (x >> 1);
+    let x = x | (x >> 2);
+    let x = x & mask_4b::<1>();
+    unsafe { (x << 4).unchecked_sub(x) }
+}
+
+#[inline(always)]
+fn increment_integer(mut n: usize, mut s: u64) -> (usize, u64) {
+    unsafe {
+        assert_unchecked(s >= 10);
+    }
+    if likely(s & 0xf < 9) {
+        return (n, unsafe { s.unchecked_add(1) });
+    }
+
+    let is_9_4b = !spread_or_4b(s ^ mask_4b::<9>());
+    let add_shift = is_9_4b.trailing_ones();
+    unsafe {
+        assert_unchecked(add_shift < 64);
+        assert_unchecked(add_shift != 0);
+    }
+    s &= !(unsafe { 1u64.unchecked_shl(add_shift).unchecked_sub(1) });
+    s += unsafe { 1u64.unchecked_shl(add_shift) };
+    n = unsafe { 16u32.unchecked_sub(spread_or_4b(s).leading_zeros() >> 2) } as usize;
+
     (n, s)
 }
 
+#[inline(always)]
 fn with_strings_in_interval(a: usize, b: usize, mut func: impl FnMut(usize, usize, u64)) {
     let a = a.max(10);
     let (mut s, mut len) = {
@@ -98,6 +128,7 @@ fn with_strings_in_interval(a: usize, b: usize, mut func: impl FnMut(usize, usiz
     }
 }
 
+#[inline(always)]
 fn invalid_in_interval(a: usize, b: usize, check: impl Fn(usize, u64) -> bool) -> usize {
     let mut result = 0;
     with_strings_in_interval(a, b, |i, n, s| {
